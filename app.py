@@ -8,13 +8,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__)
 CORS(app) 
 
-# Load the data and the AI vectors (the files you just downloaded)
-# Note: Ensure these files are in the same folder as app.py
+# Load the data and the AI vectors (L12 version)
 movies = pickle.load(open('movies_list.pkl', 'rb'))
 vectors = pickle.load(open('movie_vectors.pkl', 'rb'))
 
-# 1. UPDATED MODEL NAME: Must match your Colab model
-model = SentenceTransformer('all-mpnet-base-v2')
+# 1. UPDATED MODEL NAME: Switched from mpnet to MiniLM-L12-v2
+# This fits within Render's 512MB RAM limit
+model = SentenceTransformer('all-MiniLM-L12-v2')
 
 @app.route('/recommend', methods=['POST'])
 def recommend():
@@ -31,19 +31,17 @@ def recommend():
     similarity = cosine_similarity(query_vector, vectors).flatten()
     
     # 4. Get top 5 matches
-    # This sorts by highest similarity and takes the top 5
     top_indices = similarity.argsort()[-5:][::-1]
     
     results = []
     for i in top_indices:
         results.append({
-            "id": int(movies.iloc[i].movie_id), # Ensure this matches your column name
+            "id": int(movies.iloc[i].movie_id), 
             "title": movies.iloc[i].title,
-            "score": round(float(similarity[i]) * 100, 2) # Added a similarity score!
+            "score": round(float(similarity[i]) * 100, 2)
         })
 
     return jsonify(results)
 
 if __name__ == '__main__':
-    # port 5000 is standard for local testing
-    app.run(port=5000, debug=True)
+    app.run(port=5000)
